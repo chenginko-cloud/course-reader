@@ -70,36 +70,25 @@ body.drawn .side{transform:none}
 .sSearch input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;
   background:var(--bg3);outline:none;font-size:14.5px}
 .sSearch input:focus{border-color:var(--accent);background:var(--bg)}
-.sBody{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 10px 14px}
-.sFoot{display:flex;gap:9px;border-top:1px solid var(--line);padding:11px 12px calc(11px + env(safe-area-inset-bottom));
-  background:var(--bg3)}
-.sFoot .go{flex:1;padding:12px;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;
-  font-weight:600;text-align:center}
-.sFoot .rst{padding:12px 15px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
-  font-size:14.5px;color:var(--tx2)}
+.sBody{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 10px calc(20px + env(safe-area-inset-bottom))}
 
 .lvl1{font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:.6px;padding:14px 6px 7px}
-.cBlock{margin-bottom:4px}
-.cRow{display:flex;align-items:center;gap:9px;width:100%;padding:9px 8px;border-radius:10px;text-align:left}
+.cBlock{margin-bottom:2px}
+.cRow{display:flex;align-items:center;gap:9px;width:100%;padding:11px 9px;border-radius:10px;text-align:left}
 .cRow:active{background:var(--bg2)}
-.cRow .box{width:17px;height:17px;border-radius:5px;border:1.6px solid var(--line);flex:none;
-  display:flex;align-items:center;justify-content:center;position:relative}
-.cRow.on .box{background:var(--accent);border-color:var(--accent)}
-.cRow.on .box::after{content:"";position:absolute;left:4.5px;top:1px;width:5px;height:9px;
-  border:2px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+.cBlock.open .cRow{background:var(--bg2)}
+.cRow .arw{width:13px;flex:none;font-size:9.5px;line-height:1;color:var(--tx3);
+  display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.cBlock.open .cRow .arw{transform:rotate(90deg);color:var(--accent)}
 .cRow .nm{flex:1;font-size:14.5px;font-weight:600;line-height:1.45}
 .cRow .ct{font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums;flex:none}
-.lsWrap{margin:1px 0 3px 8px;border-left:1px solid var(--line2);padding-left:8px}
-.lRow{display:flex;align-items:flex-start;gap:8px;width:100%;padding:7px 8px;border-radius:9px;text-align:left}
+.lsWrap{display:none;margin:2px 0 7px 15px;border-left:1px solid var(--line2);padding-left:6px}
+.cBlock.open .lsWrap{display:block}
+.lRow{display:flex;align-items:flex-start;gap:8px;width:100%;padding:8px;border-radius:9px;text-align:left}
 .lRow:active{background:var(--bg2)}
-.lRow .box{width:15px;height:15px;margin-top:2px;border-radius:4.5px;border:1.5px solid var(--line);flex:none;
-  display:flex;align-items:center;justify-content:center;position:relative}
-.lRow.on .box{background:var(--accent);border-color:var(--accent)}
-.lRow.on .box::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;
-  border:2px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
-.lRow .tt{flex:1;font-size:13.5px;line-height:1.55;color:var(--tx2);word-break:break-word}
-.lRow.on .tt{color:var(--tx)}
-.lRow .tag{font-size:10.5px;color:var(--tx3);flex:none;padding-top:2px;font-variant-numeric:tabular-nums}
+.lRow .tt{flex:1;font-size:13.5px;line-height:1.6;color:var(--tx2);word-break:break-word}
+.lRow.cur .tt{color:var(--accent);font-weight:600}
+.lRow .tag{font-size:10.5px;color:var(--tx3);flex:none;padding-top:3px;font-variant-numeric:tabular-nums}
 .hint{padding:34px 10px;text-align:center;color:var(--tx3);font-size:13px;line-height:2}
 
 .scrim{position:fixed;inset:0;background:rgba(18,22,29,.42);opacity:0;pointer-events:none;
@@ -242,7 +231,7 @@ body.night .toast{background:#e6e9ee;color:#14171c}
 <header class="top">
   <button class="menu" id="menuBtn">
     <span class="ic"><i></i><i></i><i></i></span>
-    <span class="tx" id="menuTx">全部课程与课时</span>
+    <span class="tx" id="menuTx">课程目录</span>
     <span class="badge" id="menuN">0</span>
   </button>
   <div class="sp"></div>
@@ -260,10 +249,6 @@ body.night .toast{background:#e6e9ee;color:#14171c}
     <input id="kw" type="text" placeholder="搜索课时标题 / 正文…" autocomplete="off">
   </div>
   <div class="sBody" id="sBody"></div>
-  <div class="sFoot">
-    <button class="rst" id="resetAll">清空</button>
-    <button class="go" id="applyD">查看 <span id="applyN">0</span> 节</button>
-  </div>
 </aside>
 <div class="scrim" id="scrim"></div>
 <div class="edgeTips" id="edgeTips"></div>
@@ -272,7 +257,7 @@ body.night .toast{background:#e6e9ee;color:#14171c}
   <div class="wrap">
     <div class="hero">
       <h1>课程逐字稿</h1>
-      <p>左侧（手机端为顶部按钮）按「课程 → 课时」两级筛选，点任意一节即可进入阅读。支持字号调节、进度记忆、全文搜索。</p>
+      <p>左侧（手机端为顶部按钮）是课程目录：点课程名展开课时，点课时标题直接进入阅读。支持字号调节、进度记忆、全文搜索。</p>
       <div class="kv" id="heroKv"></div>
     </div>
     <div id="list"></div>
@@ -315,7 +300,7 @@ body.night .toast{background:#e6e9ee;color:#14171c}
 
 <div class="confirm" id="confirm">
   <div class="box">
-    <h4 id="cTitle">筛选改动还没应用</h4>
+    <h4 id="cTitle">有未保存的修改</h4>
     <p id="cDesc"></p>
     <div class="btns">
       <button class="no" id="cCancel">继续编辑</button>
@@ -342,9 +327,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem("cr_" + k, JSON.stringify(v)); } catch (e) {} }
 };
 const state = {
-  selC: new Set(LS.get("selC", COURSES.map(c => c.id))),
-  selL: new Set(LS.get("selL", LESSONS.map(l => l.id))),
-  pendC: null, pendL: null,
+  openC: new Set(LS.get("openC", [])),   // 展开中的一级目录（课程），默认全收起
   kw: "",
   cur: null,
   prog: LS.get("prog", {}),
@@ -352,12 +335,17 @@ const state = {
   serif: LS.get("serif", false),
   night: LS.get("night", false)
 };
-function saveSel() { LS.set("selC", [...state.selC]); LS.set("selL", [...state.selL]); }
 function saveProg() { LS.set("prog", state.prog); }
 
 /* ==================== 工具 ==================== */
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+/* 桌面端（≥900px）侧栏常驻，手势与收起动画都只在窄屏生效 */
+let isDesktop = () => window.innerWidth >= 900;
+try {
+  const _mq = window.matchMedia && window.matchMedia("(min-width:900px)");
+  if (_mq) isDesktop = () => _mq.matches;
+} catch (e) { /* 环境不支持 matchMedia 时用窗口宽度兜底 */ }
 let toastTimer = null;
 function toast(msg) {
   const t = $("toast");
@@ -366,9 +354,6 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("on"), 1700);
 }
 
-/* 一门课的全部课时，是否都在选中集合里 */
-function courseOn(c) { return c.lessons.every(l => state.selL.has(l.id)); }
-
 /* 搜索：标题优先 + 正文命中 */
 function matchText(l, kw) {
   if (!kw) return true;
@@ -376,58 +361,48 @@ function matchText(l, kw) {
   if (l.chapter.toLowerCase().includes(kw)) return true;
   return l.paras.some(p => p.toLowerCase().includes(kw));
 }
-/* 当前生效的筛选结果（阅读时 上一节/下一节 的遍历顺序） */
-function filtered(sel) {
-  const kw = (sel ? state.kw : state.kw).trim().toLowerCase();
+/* 当前搜索结果（阅读时 上一节/下一节 的遍历顺序） */
+function filtered() {
+  const kw = state.kw.trim().toLowerCase();
   const out = [];
-  COURSES.forEach(c => {
-    if (sel && !state.selC.has(c.id)) return;
-    c.lessons.forEach(l => {
-      if (sel && !state.selL.has(l.id)) return;
-      if (!matchText(l, kw)) return;
-      out.push(l);
-    });
-  });
+  COURSES.forEach(c => c.lessons.forEach(l => {
+    if (matchText(l, kw)) out.push(l);
+  }));
   return out;
 }
 
-/* ==================== 侧栏（两级筛选） ==================== */
+/* ==================== 侧栏（一级目录 + 点击展开） ==================== */
 function renderSide() {
-  const pc = state.pendC || state.selC, pl = state.pendL || state.selL;
   const kw = state.kw.trim().toLowerCase();
   let html = "";
   COURSES.forEach(c => {
-    const on = pc.has(c.id);
     const ls = c.lessons.filter(l => matchText(l, kw));
-    const selN = c.lessons.filter(l => pl.has(l.id) && matchText(l, kw)).length;
-    html += '<div class="cBlock">';
-    html += '<button class="cRow' + (on ? " on" : "") + '" data-c="' + c.id + '">'
-      + '<span class="box"></span><span class="nm">' + esc(c.name) + "</span>"
-      + '<span class="ct">' + selN + "/" + c.lessons.length + "</span></button>";
+    /* 手动展开，或搜索时命中则自动展开 */
+    const open = state.openC.has(c.id) || (!!kw && ls.length > 0);
+    html += '<div class="cBlock' + (open ? " open" : "") + '">';
+    html += '<button class="cRow" data-c="' + c.id + '" aria-expanded="' + (open ? "true" : "false") + '">'
+      + '<span class="arw">▶</span><span class="nm">' + esc(c.name) + "</span>"
+      + '<span class="ct">' + c.lessons.length + " 节</span></button>";
     html += '<div class="lsWrap">';
-    if (!ls.length) html += '<div class="hint" style="padding:14px 4px">无匹配课时</div>';
+    if (!ls.length) html += '<div class="hint" style="padding:12px 4px;text-align:left">无匹配课时</div>';
     ls.forEach(l => {
-      const on2 = pl.has(l.id);
-      html += '<button class="lRow' + (on2 ? " on" : "") + '" data-l="' + l.id + '">'
-        + '<span class="box"></span><span class="tt">' + esc(l.title) + "</span>"
+      html += '<button class="lRow' + (l.id === state.cur ? " cur" : "") + '" data-l="' + l.id + '">'
+        + '<span class="tt">' + esc(l.title) + "</span>"
         + '<span class="tag">' + CN(l.chars) + "</span></button>";
     });
     html += "</div></div>";
   });
-  $("sBody").innerHTML =
-    '<div class="lvl1">课程（一级目录）</div>' + html;
-  const n = COURSES.reduce((s, c) => s + c.lessons.filter(l => pl.has(l.id) && matchText(l, kw)).length, 0);
-  $("applyN").textContent = n;
+  $("sBody").innerHTML = '<div class="lvl1">课程目录 · 点课程名展开</div>' + html;
   $("sideSub").textContent = COURSES.length + " 门课 · " + LESSONS.length + " 节";
 }
 
 /* ==================== 主列表 ==================== */
 function renderList() {
-  const arr = filtered(true);
+  const arr = filtered();
   const kw = state.kw.trim().toLowerCase();
   $("menuN").textContent = arr.length;
   if (!arr.length) {
-    $("list").innerHTML = '<div class="empty">没有符合筛选条件的课时<br>试试调整左侧筛选或清空搜索词</div>';
+    $("list").innerHTML = '<div class="empty">没有匹配的课时<br>换个搜索词试试</div>';
     return;
   }
   let html = "";
@@ -477,7 +452,7 @@ function openLesson(id, push) {
   const l = LESSONS[IDX.get(id)]; if (!l) return;
   state.cur = id;
   const c = COURSES[l.ci];
-  const arr = filtered(true);
+  const arr = filtered();
   const pos = arr.findIndex(x => x.id === id);
   const idxAll = IDX.get(id);
   const tag = l.chapter && l.chapter !== l.course
@@ -504,6 +479,7 @@ function openLesson(id, push) {
   $("rPos").textContent = pos >= 0 ? ("筛选内 " + (pos + 1) + " / " + arr.length) : (idxAll + 1) + " / " + LESSONS.length;
   updateBar();
   renderToc();
+  renderSide();
   if (push !== false && location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
   if (!state.prog[id]) { state.prog[id] = 0.001; saveProg(); }
 }
@@ -525,6 +501,7 @@ function doCloseReader() {
   state.cur = null;
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   renderList();
+  renderSide();
 }
 function updateBar() {
   const rb = $("rBody");
@@ -543,7 +520,7 @@ function updateBar() {
 }
 function go(step) {
   if (!state.cur) return;
-  const arr = filtered(true);
+  const arr = filtered();
   const p = arr.findIndex(x => x.id === state.cur);
   if (p < 0) return;
   const t = arr[p + step];
@@ -592,18 +569,18 @@ $("cCancel").onclick = () => settleConfirm(false);
 $("cOk").onclick = () => settleConfirm(true);
 $("confirm").onclick = e => { if (e.target === $("confirm")) settleConfirm(false); };
 
-/* 待选筛选与已应用筛选是否不一致 */
-function hasPendingFilter() {
-  if (!state.pendC) return false;
-  if (state.pendC.size !== state.selC.size || state.pendL.size !== state.selL.size) return true;
-  for (const k of state.pendC) if (!state.selC.has(k)) return true;
-  for (const k of state.pendL) if (!state.selL.has(k)) return true;
-  return false;
-}
-
 /* ==================== 抽屉开关（含跟手动画） ==================== */
 function openDrawer() {
   if ($("reader").classList.contains("open")) return;
+  /* 顺带展开正在阅读的那门课，方便定位 */
+  if (state.cur) {
+    const l = LESSONS[IDX.get(state.cur)];
+    if (l && !state.openC.has(COURSES[l.ci].id)) {
+      state.openC.add(COURSES[l.ci].id);
+      LS.set("openC", [...state.openC]);
+    }
+  }
+  renderSide();
   $("side").style.transform = "";
   $("scrim").style.opacity = "";
   document.body.classList.add("drawn", "locked");
@@ -615,6 +592,13 @@ function settleSide(open) {
     side.classList.remove("dragging");
     side.style.transform = "";
     $("scrim").style.opacity = "";
+  } else if (isDesktop()) {
+    /* 桌面端侧栏常驻，不做滑出动画 */
+    document.body.classList.remove("drawn");
+    side.classList.remove("dragging");
+    side.style.transform = "";
+    $("scrim").style.opacity = "";
+    if (!$("reader").classList.contains("open")) document.body.classList.remove("locked");
   } else {
     side.style.transform = "translateX(-101%)";
     $("scrim").style.opacity = "";
@@ -623,14 +607,9 @@ function settleSide(open) {
     setTimeout(() => { side.classList.remove("dragging"); side.style.transform = ""; }, 320);
   }
 }
-/* force=true 时跳过「未保存确认」，用于「查看」按钮等已提交场景 */
-function closeDrawer(force) {
+/* 目录是纯浏览，没有待提交的改动，直接收起 */
+function closeDrawer() {
   if (!document.body.classList.contains("drawn")) return;
-  if (!force && hasPendingFilter()) {
-    askConfirm("筛选改动还没应用", "你勾选的课时还没点「查看」，直接返回的话这次改动会丢掉。", "放弃并返回")
-      .then(ok => { if (ok) { state.pendC = state.pendL = null; closeDrawer(true); } });
-    return;
-  }
   settleSide(false);
 }
 
@@ -641,33 +620,17 @@ $("scrim").onclick = () => closeDrawer();
 
 $("sBody").onclick = e => {
   const cb = e.target.closest("[data-c]");
-  const lb = e.target.closest("[data-l]");
-  if (!state.pendC) { state.pendC = new Set(state.selC); state.pendL = new Set(state.selL); }
   if (cb) {
     const cid = cb.dataset.c;
-    const cl = COURSES.find(x => x.id === cid).lessons;
-    const on = cl.every(l => state.pendL.has(l.id));
-    cl.forEach(l => on ? state.pendL.delete(l.id) : state.pendL.add(l.id));
-    on ? state.pendC.delete(cid) : state.pendC.add(cid);
-  } else if (lb) {
-    const lid = lb.dataset.l;
-    state.pendL.has(lid) ? state.pendL.delete(lid) : state.pendL.add(lid);
-    const c = COURSES.find(x => x.lessons.some(l => l.id === lid));
-    c.lessons.every(l => state.pendL.has(l.id)) ? state.pendC.add(c.id) : state.pendC.delete(c.id);
-  } else return;
-  renderSide();
-};
-$("applyD").onclick = () => {
-  if (state.pendC) { state.selC = state.pendC; state.selL = state.pendL; state.pendC = state.pendL = null; }
-  saveSel(); renderSide(); renderList();
-  settleSide(false);
-  window.scrollTo({ top: 0 });
-};
-$("resetAll").onclick = () => {
-  state.pendC = new Set(COURSES.map(c => c.id));
-  state.pendL = new Set(LESSONS.map(l => l.id));
-  state.kw = ""; $("kw").value = "";
-  renderSide();
+    state.openC.has(cid) ? state.openC.delete(cid) : state.openC.add(cid);
+    LS.set("openC", [...state.openC]);
+    renderSide();
+    return;
+  }
+  const lb = e.target.closest("[data-l]");
+  if (!lb) return;
+  openLesson(lb.dataset.l);
+  if (!isDesktop()) closeDrawer();
 };
 let kwTimer = null;
 $("kw").oninput = e => {
@@ -732,7 +695,7 @@ window.addEventListener("hashchange", () => {
 
 /* ==================== 滑动手势 ====================
    1) 列表页：右滑打开目录（跟手位移）
-   2) 目录页：左滑返回列表（跟手位移；有未应用筛选时先确认）
+   2) 目录页：左滑返回列表（跟手位移）
    3) 阅读页：从屏幕左边缘右滑返回列表（跟手位移 + 滑出动画）
 */
 (function gestures() {
@@ -740,16 +703,6 @@ window.addEventListener("hashchange", () => {
   const SLOP = 7;              // 方向判定最小位移
   const EDGE = 28;             // 阅读页可起滑的左边缘宽度
   const TRIGGER = 58;          // 松手触发阈值
-  let desktop = innerWidth >= 900;
-  try {
-    const mq = window.matchMedia && window.matchMedia("(min-width:900px)");
-    if (mq) {
-      desktop = mq.matches;
-      const applyMQ = () => { desktop = mq.matches; };
-      if (mq.addEventListener) mq.addEventListener("change", applyMQ);
-      else if (mq.addListener) mq.addListener(applyMQ);
-    }
-  } catch (err) { /* 环境不支持 matchMedia 时用窗口宽度兜底 */ }
 
   let g = null;
   /*
@@ -769,8 +722,8 @@ window.addEventListener("hashchange", () => {
     if (e.touches && e.touches.length > 1) return;
     let mode = null;
     if (reading()) { if (e.clientX <= EDGE) mode = "back"; }
-    else if (drawn()) { if (!desktop) mode = "close"; }
-    else if (!desktop) { mode = "open"; }
+    else if (drawn()) { if (!isDesktop()) mode = "close"; }
+    else if (!isDesktop()) { mode = "open"; }
     if (!mode) return;
     g = { mode, id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, on: false };
   }, { passive: true });
@@ -813,7 +766,7 @@ window.addEventListener("hashchange", () => {
       side.classList.remove("dragging");
       side.style.transform = "";
       scrim.style.opacity = "";
-      if (-dx > TRIGGER) closeDrawer();   // 有未应用的筛选改动时，closeDrawer 会先弹确认
+      if (-dx > TRIGGER) closeDrawer();   // 目录只读，直接收起
       else settleSide(true);              // 回弹
     } else if (dx > 110) {
       reader.style.transform = "translateX(100%)";

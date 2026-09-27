@@ -49,60 +49,67 @@ function swipe(target, x0, y0, dx, dy, steps) {
 const drawn = () => doc.body.classList.contains("drawn");
 const reading = () => $("reader").classList.contains("open");
 const confirmOpen = () => $("confirm").classList.contains("open");
+const blocks = () => doc.querySelectorAll("#sBody .cBlock");
+const openBlocks = () => doc.querySelectorAll("#sBody .cBlock.open");
+const courses = () => doc.querySelectorAll("#sBody .cRow");
+const lessons = n => doc.querySelectorAll("#list .lesson")[n];
 
 (async () => {
   await sleep(350);
 
-  /* ---------- 基础渲染 ---------- */
+  /* ---------- 1. 基础渲染 ---------- */
   ok("列表渲染 49 节课", doc.querySelectorAll("#list .lesson").length === 49);
-  ok("侧栏 2 个一级目录", doc.querySelectorAll("#sBody .cRow").length === 2);
-  ok("侧栏 49 个二级目录", doc.querySelectorAll("#sBody .lRow").length === 49);
+  ok("侧栏 2 个一级目录", courses().length === 2);
+  ok("侧栏不含二级目录（收起态）", openBlocks().length === 0, "open=" + openBlocks().length);
+  ok("侧栏已无勾选框", doc.querySelectorAll("#sBody .cRow .box, #sBody .lRow .box").length === 0);
+  ok("底部按钮已移除（无 清空/查看）", !$("applyD") && !$("resetAll"));
 
-  /* ---------- 1. 列表右滑打开目录 ---------- */
-  ok("初始抽屉关闭", !drawn());
+  /* ---------- 2. 点一级目录展开 / 收起 ---------- */
+  click(courses()[0]);
+  ok("点课程名 → 展开", openBlocks().length === 1);
+  ok("展开后 aria-expanded=true", courses()[0].getAttribute("aria-expanded") === "true");
+  ok("展开块内含该课全部课时", openBlocks()[0].querySelectorAll(".lRow").length === 26,
+    String(openBlocks()[0].querySelectorAll(".lRow").length));
+  click(courses()[0]);
+  ok("再点一次 → 收起", openBlocks().length === 0);
+  ok("收起后 aria-expanded=false", courses()[0].getAttribute("aria-expanded") === "false");
+  click(courses()[1]);
+  ok("第二门课可独立展开", openBlocks().length === 1);
+  ok("展开状态已写入 localStorage", /c2/.test(window.localStorage.getItem("cr_openC") || ""),
+    window.localStorage.getItem("cr_openC"));
+
+  /* ---------- 3. 展开后点课时 → 进阅读 + 抽屉自动收起 ---------- */
   swipe($("list"), 200, 400, 160, 6);
   ok("列表右滑 → 目录打开", drawn());
-  ok("顶栏计数仍在", $("menuN").textContent === "49");
-  ok("右滑后位移已复位", $("side").style.transform === "", JSON.stringify($("side").style.transform));
+  click(openBlocks()[0].querySelectorAll(".lRow")[10]);
+  ok("点课时标题 → 进入阅读", reading());
+  ok("锚点指向该节", /^#c2-11$/.test(window.location.hash), window.location.hash);
+  await sleep(30);
+  ok("点课时后抽屉收起", !drawn());
+  ok("进入阅读时不弹确认", !confirmOpen());
+  click($("rClose"));
+  ok("返回列表正常", !reading());
 
-  /* ---------- 2. 目录左滑返回列表（无待选改动，直接关） ---------- */
+  /* ---------- 4. 目录左滑返回（只读，不弹确认） ---------- */
+  click($("menuBtn"));
+  ok("菜单按钮可打开目录", drawn());
+  click(courses()[0]);                                  // 顺手展开一门
   swipe($("sBody"), 300, 400, -160, 5);
   await sleep(30);
   ok("目录左滑 → 返回列表", !drawn());
-  ok("无待选改动时不弹确认", !confirmOpen());
+  ok("目录为只读，不弹未保存确认", !confirmOpen());
 
-  /* ---------- 3. 有未应用筛选改动 → 左滑先提示确认 ---------- */
-  click($("menuBtn"));
-  ok("菜单按钮可打开目录", drawn());
-  click(doc.querySelectorAll("#sBody .cRow")[1]);           // 取消勾选《自学方法》
-  ok("待选计数变 26", $("applyN").textContent === "26", $("applyN").textContent);
-  swipe($("sBody"), 300, 400, -160, 5);
-  await sleep(30);
-  ok("有未保存改动 → 弹出确认", confirmOpen());
-  ok("确认弹层出现时目录仍打开", drawn());
-  click($("cCancel"));
-  await sleep(30);
-  ok("选「继续编辑」→ 目录保持打开", drawn());
-  ok("待选改动被保留", $("applyN").textContent === "26");
-  swipe($("sBody"), 300, 400, -160, 5);
-  await sleep(30);
-  click($("cOk"));
-  await sleep(30);
-  ok("选「放弃并返回」→ 目录关闭", !drawn());
-  ok("被放弃的改动未生效（列表仍 49 节）", doc.querySelectorAll("#list .lesson").length === 49);
-
-  /* ---------- 4. 位移不够时回弹 ---------- */
+  /* ---------- 5. 位移不够时回弹 ---------- */
   click($("menuBtn"));
   swipe($("sBody"), 300, 500, -30, 0);
   await sleep(30);
   ok("左滑位移不够 → 回弹不关", drawn());
-  if (confirmOpen()) click($("cOk"));
-  click($("applyD"));        // 恢复正常筛选并关闭
-  await sleep(340);
-  ok("「查看」按钮正常关闭目录", !drawn());
+  swipe($("sBody"), 300, 500, -160, 0);
+  await sleep(30);
+  ok("补足位移后正常关闭", !drawn());
 
-  /* ---------- 5. 阅读页左边缘右滑返回 ---------- */
-  click(doc.querySelectorAll("#list .lesson")[0]);
+  /* ---------- 6. 阅读页左边缘右滑返回 ---------- */
+  click(lessons(0));
   ok("阅读层已打开", reading());
   ok("阅读层带 transform 过渡", /transform/.test(window.getComputedStyle($("reader")).transition || ""),
     window.getComputedStyle($("reader")).transition);
@@ -117,8 +124,8 @@ const confirmOpen = () => $("confirm").classList.contains("open");
   ok("无未保存内容时不弹确认", !confirmOpen());
   ok("URL 锚点已清空", window.location.hash === "", window.location.hash);
 
-  /* ---------- 6. 阅读页中部右滑不触发返回 ---------- */
-  click(doc.querySelectorAll("#list .lesson")[3]);
+  /* ---------- 7. 阅读页中部右滑不触发返回 ---------- */
+  click(lessons(3));
   ok("重新打开阅读层", reading());
   swipe($("rBody"), 300, 400, 160, 5);
   await sleep(60);
@@ -126,15 +133,29 @@ const confirmOpen = () => $("confirm").classList.contains("open");
   click($("rClose"));
   ok("返回按钮仍可用", !reading());
 
-  /* ---------- 7. 纵向滑动不误触发 ---------- */
+  /* ---------- 8. 纵向滑动不误触发 ---------- */
   swipe($("list"), 200, 400, 12, 90);
   ok("纵向滑动不开目录", !drawn());
 
-  /* ---------- 8. 旧功能未回归 ---------- */
-  click(doc.querySelectorAll("#list .lesson")[1]);
+  /* ---------- 9. 搜索：自动展开命中课程 + 收敛列表 ---------- */
+  $("kw").value = "错题";
+  $("kw").dispatchEvent(new window.Event("input", { bubbles: true }));
+  await sleep(260);
+  const hit = doc.querySelectorAll("#list .lesson").length;
+  ok("搜索后列表收敛", hit > 0 && hit < 49, "命中 " + hit + " 节");
+  ok("搜索时命中课程自动展开", openBlocks().length >= 1, "open=" + openBlocks().length);
+  $("kw").value = "";
+  $("kw").dispatchEvent(new window.Event("input", { bubbles: true }));
+  await sleep(260);
+  ok("清空搜索后恢复 49 节", doc.querySelectorAll("#list .lesson").length === 49);
+
+  /* ---------- 10. 旧功能未回归 ---------- */
+  click(lessons(1));
   ok("开课正常", reading() && window.location.hash === "#c1-2");
   click($("rNext"));
   ok("下一节正常", window.location.hash === "#c1-3");
+  click($("rPrev"));
+  ok("上一节正常", window.location.hash === "#c1-2");
   click($("rToc"));
   ok("目录浮层正常", $("toc").classList.contains("open"));
   click($("tocClose"));
