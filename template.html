@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b5cd9'/%3E%3Cg stroke='%23fff' stroke-width='4.5' stroke-linecap='round'%3E%3Cpath d='M18 20h28M18 32h28M18 44h16'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="课程逐字稿浏览：《如何唤醒孩子的自驱力》《自学方法》">
+<title>课程逐字稿库</title>
+<style>
+:root{
+  --bg:#fff; --bg2:#f6f7f9; --bg3:#fafbfc; --line:#e8eaee; --line2:#f0f2f5;
+  --tx:#1f2328; --tx2:#5c6570; --tx3:#8b95a1;
+  --accent:#2b5cd9; --accent-soft:#eaf0ff; --accent-line:#b9cdfd;
+  --c1:#b45309; --c1bg:#fff3e0; --c2:#2045a5; --c2bg:#dce8ff;
+  --hd:54px; --fs:17.5px; --lh:1.95;
+  --serif:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",sans-serif;
+}
+body.night{
+  --bg:#14171c; --bg2:#191d23; --bg3:#1b1f26; --line:#262c35; --line2:#21262e;
+  --tx:#e6e9ee; --tx2:#a4adb9; --tx3:#79828f;
+  --accent:#6b93ff; --accent-soft:#1d2740; --accent-line:#33456e;
+  --c1:#f0b37a; --c1bg:#3a2c19; --c2:#9db9f5; --c2bg:#1e2a44;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--tx);font:16px/1.6 var(--sans);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .2s,color .2s}
+body.locked{overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+
+/* ================= 顶栏（移动） ================= */
+.top{position:fixed;left:0;right:0;top:0;z-index:30;height:calc(var(--hd) + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);display:flex;align-items:center;gap:9px;padding-left:10px;padding-right:10px;
+  background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line)}
+.top .menu{display:flex;align-items:center;gap:8px;padding:7px 13px 7px 11px;border:1px solid var(--line);
+  border-radius:999px;background:var(--bg);max-width:74%}
+.top .menu .ic{width:15px;flex:none}
+.top .menu .ic i{display:block;height:1.7px;background:var(--tx2);border-radius:2px;margin:3.2px 0}
+.top .menu .tx{font-size:13.5px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .menu .badge{background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;padding:1px 7px;
+  border-radius:999px;flex:none;font-variant-numeric:tabular-nums}
+.top .sp{flex:1}
+.ibtn{width:36px;height:36px;border:1px solid var(--line);border-radius:11px;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--tx2);flex:none}
+.ibtn:active{background:var(--bg2)}
+
+/* ================= 侧栏 / 抽屉 ================= */
+.side{position:fixed;left:0;top:0;bottom:0;width:min(86vw,340px);background:var(--bg);z-index:60;
+  transform:translateX(-101%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  display:flex;flex-direction:column;border-right:1px solid var(--line);
+  box-shadow:6px 0 34px rgba(16,24,40,.14)}
+body.drawn .side{transform:none}
+.sHead{display:flex;align-items:center;gap:8px;padding:15px 16px 12px;
+  padding-top:calc(15px + env(safe-area-inset-top));border-bottom:1px solid var(--line2)}
+.sHead h2{margin:0;font-size:15.5px;font-weight:700;letter-spacing:.2px}
+.sHead .sub{font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.sHead .sp{flex:1}
+.sHead .cls{font-size:19px;line-height:1;color:var(--tx3);padding:2px 6px}
+.sSearch{padding:11px 14px 3px}
+.sSearch input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg3);outline:none;font-size:14.5px}
+.sSearch input:focus{border-color:var(--accent);background:var(--bg)}
+.sBody{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 10px 14px}
+.sFoot{display:flex;gap:9px;border-top:1px solid var(--line);padding:11px 12px calc(11px + env(safe-area-inset-bottom));
+  background:var(--bg3)}
+.sFoot .go{flex:1;padding:12px;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;
+  font-weight:600;text-align:center}
+.sFoot .rst{padding:12px 15px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+  font-size:14.5px;color:var(--tx2)}
+
+.lvl1{font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:.6px;padding:14px 6px 7px}
+.cBlock{margin-bottom:4px}
+.cRow{display:flex;align-items:center;gap:9px;width:100%;padding:9px 8px;border-radius:10px;text-align:left}
+.cRow:active{background:var(--bg2)}
+.cRow .box{width:17px;height:17px;border-radius:5px;border:1.6px solid var(--line);flex:none;
+  display:flex;align-items:center;justify-content:center;position:relative}
+.cRow.on .box{background:var(--accent);border-color:var(--accent)}
+.cRow.on .box::after{content:"";position:absolute;left:4.5px;top:1px;width:5px;height:9px;
+  border:2px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+.cRow .nm{flex:1;font-size:14.5px;font-weight:600;line-height:1.45}
+.cRow .ct{font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums;flex:none}
+.lsWrap{margin:1px 0 3px 8px;border-left:1px solid var(--line2);padding-left:8px}
+.lRow{display:flex;align-items:flex-start;gap:8px;width:100%;padding:7px 8px;border-radius:9px;text-align:left}
+.lRow:active{background:var(--bg2)}
+.lRow .box{width:15px;height:15px;margin-top:2px;border-radius:4.5px;border:1.5px solid var(--line);flex:none;
+  display:flex;align-items:center;justify-content:center;position:relative}
+.lRow.on .box{background:var(--accent);border-color:var(--accent)}
+.lRow.on .box::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;
+  border:2px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+.lRow .tt{flex:1;font-size:13.5px;line-height:1.55;color:var(--tx2);word-break:break-word}
+.lRow.on .tt{color:var(--tx)}
+.lRow .tag{font-size:10.5px;color:var(--tx3);flex:none;padding-top:2px;font-variant-numeric:tabular-nums}
+.hint{padding:34px 10px;text-align:center;color:var(--tx3);font-size:13px;line-height:2}
+
+.scrim{position:fixed;inset:0;background:rgba(18,22,29,.42);opacity:0;pointer-events:none;
+  transition:opacity .26s;z-index:50}
+body.drawn .scrim{opacity:1;pointer-events:auto}
+.edgeTips{position:fixed;left:0;top:calc(var(--hd) + env(safe-area-inset-top));bottom:0;width:26px;
+  z-index:45;pointer-events:none}
+.edgeTips::after{content:"";position:absolute;left:4px;top:46%;width:3px;height:40px;border-radius:3px;
+  background:var(--tx3);opacity:.55}
+body.drawn .edgeTips{visibility:hidden}
+
+/* ================= 主区 ================= */
+.main{padding:calc(var(--hd) + env(safe-area-inset-top)) 0 100px}
+.wrap{max-width:760px;margin:0 auto;padding:0 18px}
+.hero{padding:26px 0 20px;border-bottom:1px solid var(--line)}
+.hero h1{margin:0 0 9px;font-size:23px;line-height:1.4;letter-spacing:-.2px}
+.hero p{margin:0;font-size:13.5px;color:var(--tx2);line-height:1.85}
+.hero .kv{margin-top:13px;display:flex;flex-wrap:wrap;gap:7px}
+.hero .kv span{font-size:12px;color:var(--tx2);background:var(--bg2);border-radius:6px;padding:3px 9px}
+.cGroup{padding-top:22px}
+.cTitle{display:flex;align-items:baseline;gap:9px;margin:0 0 4px;font-size:16.5px;font-weight:700}
+.cTitle .au{font-size:12px;font-weight:400;color:var(--tx3)}
+.lesson{display:block;width:100%;text-align:left;padding:14px 2px;border-bottom:1px solid var(--line2)}
+.lesson:active{background:var(--bg2)}
+.lesson .l1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lesson .no{font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.lesson .tt{font-size:16px;font-weight:600;line-height:1.5;color:var(--tx)}
+.lesson .meta{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.bdg{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11.5px;font-weight:500;white-space:nowrap}
+.bdg.c1{background:var(--c1bg);color:var(--c1)}
+.bdg.c2{background:var(--c2bg);color:var(--c2)}
+.bdg.soft{background:var(--bg2);color:var(--tx3)}
+.bdg.read{background:var(--accent-soft);color:var(--accent)}
+.lesson .bar{margin-top:8px;height:3px;border-radius:3px;background:var(--line2);overflow:hidden}
+.lesson .bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.empty{padding:70px 12px;text-align:center;color:var(--tx3);font-size:14px;line-height:2.1}
+
+/* ================= 阅读层 ================= */
+.reader{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;flex-direction:column}
+.reader.open{display:flex}
+.rTop{flex:none;display:flex;align-items:center;gap:7px;padding:9px 11px;
+  padding-top:calc(9px + env(safe-area-inset-top));border-bottom:1px solid var(--line2);
+  background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(10px)}
+.rTop .bk{display:flex;align-items:center;gap:5px;padding:7px 12px 7px 9px;border:1px solid var(--line);
+  border-radius:9px;font-size:13.5px;color:var(--tx2);background:var(--bg)}
+.rTop .sp{flex:1}
+.rTop .tb{padding:7px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;color:var(--tx2);
+  background:var(--bg);white-space:nowrap}
+.rTop .tb:disabled{opacity:.32}
+.rTop .tb.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
+.rProg{flex:none;height:2.5px;background:var(--line2)}
+.rProg i{display:block;height:100%;width:0;background:var(--accent);transition:width .12s linear}
+.rBody{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:24px 0 130px}
+.art{max-width:720px;margin:0 auto;padding:0 20px}
+.art .cTag{font-size:11.5px;font-weight:700;letter-spacing:.5px;color:var(--c1);background:var(--c1bg);
+  display:inline-block;padding:2px 8px;border-radius:5px;margin-bottom:11px}
+.art .cTag.c2{color:var(--c2);background:var(--c2bg)}
+.art h1{margin:0 0 10px;font-size:23px;line-height:1.45;letter-spacing:-.2px}
+.art .rmeta{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--tx3);
+  padding-bottom:16px;border-bottom:1px solid var(--line2);margin-bottom:22px;font-variant-numeric:tabular-nums}
+.art .txt{font-size:var(--fs);line-height:var(--lh);color:var(--tx);font-family:var(--sans)}
+.art.serif .txt{font-family:var(--serif)}
+.art .txt p{margin:0 0 1.05em;text-align:justify;word-break:break-word;text-indent:0}
+.art .txt p:first-letter{}
+.pager{display:flex;gap:10px;margin:34px 0 0;padding-top:22px;border-top:1px solid var(--line2)}
+.pager button{flex:1;padding:13px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+  font-size:14.5px;color:var(--tx2);line-height:1.5}
+.pager button:disabled{opacity:.35}
+.pager .nx{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft);font-weight:600}
+.rFoot{position:fixed;left:0;right:0;bottom:0;z-index:82;display:flex;align-items:center;gap:8px;
+  padding:9px 12px calc(9px + env(safe-area-inset-bottom));border-top:1px solid var(--line);
+  background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(12px)}
+.rFoot .sp{flex:1}
+.rFoot .pos{font-size:12.5px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* 目录浮层 */
+.toc{position:fixed;inset:0;z-index:90;display:none;justify-content:flex-end;
+  background:rgba(18,22,29,.42)}
+.toc.open{display:flex}
+.tocSheet{width:min(90vw,380px);height:100%;background:var(--bg);display:flex;flex-direction:column;
+  box-shadow:-8px 0 40px rgba(16,24,40,.2)}
+.tocHead{display:flex;align-items:center;gap:8px;padding:15px 16px 12px;
+  padding-top:calc(15px + env(safe-area-inset-top));border-bottom:1px solid var(--line2)}
+.tocHead h3{margin:0;font-size:15.5px}
+.tocHead .sp{flex:1}
+.tocHead .cls{font-size:19px;color:var(--tx3);padding:2px 6px}
+.tocBody{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 10px 30px}
+.tocRow{display:block;width:100%;text-align:left;padding:9px 9px;border-radius:9px;font-size:13.5px;
+  line-height:1.55;color:var(--tx2)}
+.tocRow:active{background:var(--bg2)}
+.tocRow.cur{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(6px);
+  background:#1f2328;color:#fff;padding:9px 17px;border-radius:20px;font-size:13.5px;
+  opacity:0;pointer-events:none;transition:.22s;z-index:130;white-space:nowrap}
+body.night .toast{background:#e6e9ee;color:#14171c}
+.toast.on{opacity:.95;transform:translateX(-50%)}
+
+/* ================= 桌面端 ================= */
+@media(min-width:900px){
+  body{padding-left:312px}
+  .top{display:none}
+  .side{transform:none;width:312px;box-shadow:none;border-right:1px solid var(--line)}
+  .sHead{padding-top:19px}
+  .sHead .cls{display:none}
+  .scrim,.edgeTips{display:none}
+  .main{padding-top:0}
+  .hero{padding-top:44px}
+  .rTop,.rFoot{left:312px}
+  .reader{left:312px}
+  .edgeTips{display:none}
+  .wrap{padding:0 30px}
+}
+@media(min-width:1500px){
+  .reader{left:312px}
+  .art{max-width:740px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <button class="menu" id="menuBtn">
+    <span class="ic"><i></i><i></i><i></i></span>
+    <span class="tx" id="menuTx">全部课程与课时</span>
+    <span class="badge" id="menuN">0</span>
+  </button>
+  <div class="sp"></div>
+  <button class="ibtn" id="nightBtn" title="夜间模式">☾</button>
+</header>
+
+<aside class="side" id="side">
+  <div class="sHead">
+    <h2>课程逐字稿库</h2>
+    <span class="sub" id="sideSub"></span>
+    <div class="sp"></div>
+    <button class="cls" id="closeSide" aria-label="关闭">✕</button>
+  </div>
+  <div class="sSearch">
+    <input id="kw" type="text" placeholder="搜索课时标题 / 正文…" autocomplete="off">
+  </div>
+  <div class="sBody" id="sBody"></div>
+  <div class="sFoot">
+    <button class="rst" id="resetAll">清空</button>
+    <button class="go" id="applyD">查看 <span id="applyN">0</span> 节</button>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+<div class="edgeTips" id="edgeTips"></div>
+
+<main class="main">
+  <div class="wrap">
+    <div class="hero">
+      <h1>课程逐字稿</h1>
+      <p>左侧（手机端为顶部按钮）按「课程 → 课时」两级筛选，点任意一节即可进入阅读。支持字号调节、进度记忆、全文搜索。</p>
+      <div class="kv" id="heroKv"></div>
+    </div>
+    <div id="list"></div>
+  </div>
+</main>
+
+<article class="reader" id="reader" aria-label="逐字稿阅读">
+  <div class="rTop">
+    <button class="bk" id="rClose">‹ 返回</button>
+    <button class="tb" id="rPrev">上一节</button>
+    <button class="tb" id="rNext">下一节</button>
+    <div class="sp"></div>
+    <button class="tb" id="rToc">目录</button>
+    <button class="tb" id="rFontDown" title="减小字号">A－</button>
+    <button class="tb" id="rFontUp" title="增大字号">A＋</button>
+    <button class="tb" id="rCopy">复制</button>
+    <button class="tb" id="rSerif" title="切换字体">宋</button>
+    <button class="tb" id="rNight" title="夜间模式">☾</button>
+  </div>
+  <div class="rProg"><i id="rBar"></i></div>
+  <div class="rBody" id="rBody"></div>
+  <div class="rFoot">
+    <button class="tb" id="fPrev">‹ 上一节</button>
+    <div class="sp"></div>
+    <span class="pos" id="rPos"></span>
+    <div class="sp"></div>
+    <button class="tb" id="fNext">下一节 ›</button>
+  </div>
+</article>
+
+<div class="toc" id="toc">
+  <div class="tocSheet">
+    <div class="tocHead"><h3>目录</h3><span class="sp"></span>
+      <button class="cls" id="tocClose" aria-label="关闭">✕</button></div>
+    <div class="tocBody" id="tocBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="d">__DATA__</script>
+<script>
+"use strict";
+/* ==================== 数据 ==================== */
+const DATA = JSON.parse(document.getElementById("d").textContent);
+const COURSES = DATA.courses;
+const LESSONS = [];
+COURSES.forEach((c, ci) => c.lessons.forEach(l => { l.ci = ci; LESSONS.push(l); }));
+const IDX = new Map(LESSONS.map((l, i) => [l.id, i]));
+const TOTAL_CHARS = LESSONS.reduce((s, l) => s + l.chars, 0);
+const CN = n => n.toLocaleString("zh-CN");
+
+/* ==================== 本地状态 ==================== */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem("cr_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("cr_" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const state = {
+  selC: new Set(LS.get("selC", COURSES.map(c => c.id))),
+  selL: new Set(LS.get("selL", LESSONS.map(l => l.id))),
+  pendC: null, pendL: null,
+  kw: "",
+  cur: null,
+  prog: LS.get("prog", {}),
+  fs: LS.get("fs", 17.5),
+  serif: LS.get("serif", false),
+  night: LS.get("night", false)
+};
+function saveSel() { LS.set("selC", [...state.selC]); LS.set("selL", [...state.selL]); }
+function saveProg() { LS.set("prog", state.prog); }
+
+/* ==================== 工具 ==================== */
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let toastTimer = null;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 1700);
+}
+
+/* 一门课的全部课时，是否都在选中集合里 */
+function courseOn(c) { return c.lessons.every(l => state.selL.has(l.id)); }
+
+/* 搜索：标题优先 + 正文命中 */
+function matchText(l, kw) {
+  if (!kw) return true;
+  if (l.title.toLowerCase().includes(kw)) return true;
+  if (l.chapter.toLowerCase().includes(kw)) return true;
+  return l.paras.some(p => p.toLowerCase().includes(kw));
+}
+/* 当前生效的筛选结果（阅读时 上一节/下一节 的遍历顺序） */
+function filtered(sel) {
+  const kw = (sel ? state.kw : state.kw).trim().toLowerCase();
+  const out = [];
+  COURSES.forEach(c => {
+    if (sel && !state.selC.has(c.id)) return;
+    c.lessons.forEach(l => {
+      if (sel && !state.selL.has(l.id)) return;
+      if (!matchText(l, kw)) return;
+      out.push(l);
+    });
+  });
+  return out;
+}
+
+/* ==================== 侧栏（两级筛选） ==================== */
+function renderSide() {
+  const pc = state.pendC || state.selC, pl = state.pendL || state.selL;
+  const kw = state.kw.trim().toLowerCase();
+  let html = "";
+  COURSES.forEach(c => {
+    const on = pc.has(c.id);
+    const ls = c.lessons.filter(l => matchText(l, kw));
+    const selN = c.lessons.filter(l => pl.has(l.id) && matchText(l, kw)).length;
+    html += '<div class="cBlock">';
+    html += '<button class="cRow' + (on ? " on" : "") + '" data-c="' + c.id + '">'
+      + '<span class="box"></span><span class="nm">' + esc(c.name) + "</span>"
+      + '<span class="ct">' + selN + "/" + c.lessons.length + "</span></button>";
+    html += '<div class="lsWrap">';
+    if (!ls.length) html += '<div class="hint" style="padding:14px 4px">无匹配课时</div>';
+    ls.forEach(l => {
+      const on2 = pl.has(l.id);
+      html += '<button class="lRow' + (on2 ? " on" : "") + '" data-l="' + l.id + '">'
+        + '<span class="box"></span><span class="tt">' + esc(l.title) + "</span>"
+        + '<span class="tag">' + CN(l.chars) + "</span></button>";
+    });
+    html += "</div></div>";
+  });
+  $("sBody").innerHTML =
+    '<div class="lvl1">课程（一级目录）</div>' + html;
+  const n = COURSES.reduce((s, c) => s + c.lessons.filter(l => pl.has(l.id) && matchText(l, kw)).length, 0);
+  $("applyN").textContent = n;
+  $("sideSub").textContent = COURSES.length + " 门课 · " + LESSONS.length + " 节";
+}
+
+/* ==================== 主列表 ==================== */
+function renderList() {
+  const arr = filtered(true);
+  const kw = state.kw.trim().toLowerCase();
+  $("menuN").textContent = arr.length;
+  if (!arr.length) {
+    $("list").innerHTML = '<div class="empty">没有符合筛选条件的课时<br>试试调整左侧筛选或清空搜索词</div>';
+    return;
+  }
+  let html = "";
+  let lastCi = -1;
+  arr.forEach(l => {
+    if (l.ci !== lastCi) {
+      lastCi = l.ci;
+      const c = COURSES[l.ci];
+      html += '<div class="cGroup"><h2 class="cTitle">' + esc(c.name)
+        + '<span class="au">' + esc(c.author) + "</span></h2></div>";
+    }
+    const p = state.prog[l.id] || 0;
+    const tag = l.chapter && l.chapter !== l.course
+      ? '<span class="bdg c' + (l.ci + 1) + '">' + esc(l.chapter) + "</span>" : "";
+    let snip = "";
+    if (kw) {
+      const hit = l.paras.find(x => x.toLowerCase().includes(kw));
+      if (hit) {
+        const i = hit.toLowerCase().indexOf(kw);
+        snip = (i > 26 ? "…" : "") + hit.slice(Math.max(0, i - 26), i + 74) + "…";
+      }
+    }
+    html += '<button class="lesson" data-id="' + l.id + '">'
+      + '<div class="l1"><span class="no">' + l.n + "</span>"
+      + '<span class="tt">' + esc(l.title) + "</span></div>"
+      + '<div class="meta">' + tag + '<span class="bdg soft">' + CN(l.chars) + " 字</span>"
+      + (p > 0.02 ? '<span class="bdg read">已读 ' + Math.round(p * 100) + "%</span>" : "")
+      + '<span class="bdg soft">' + l.paras.length + " 段</span></div>"
+      + (snip ? '<div class="meta" style="display:block;color:var(--tx2)">' + esc(snip) + "</div>" : "")
+      + (p > 0.02 ? '<div class="bar"><i style="width:' + Math.round(p * 100) + '%"></i></div>' : "")
+      + "</button>";
+  });
+  $("list").innerHTML = html;
+}
+
+function renderHero() {
+  $("heroKv").innerHTML =
+    '<span>' + COURSES.length + " 门课程</span>"
+    + "<span>" + LESSONS.length + " 节课时</span>"
+    + "<span>约 " + (TOTAL_CHARS / 10000).toFixed(1) + " 万字</span>"
+    + '<span>逐字稿原文</span>';
+}
+
+/* ==================== 阅读 ==================== */
+let saveTimer = null;
+function openLesson(id, push) {
+  const l = LESSONS[IDX.get(id)]; if (!l) return;
+  state.cur = id;
+  const c = COURSES[l.ci];
+  const arr = filtered(true);
+  const pos = arr.findIndex(x => x.id === id);
+  const idxAll = IDX.get(id);
+  const tag = l.chapter && l.chapter !== l.course
+    ? '<span class="cTag c' + (l.ci + 1) + '">' + esc(l.chapter) + "</span>" : '<span class="cTag">' + esc(c.name) + "</span>";
+  $("rBody").innerHTML = '<div class="art' + (state.serif ? " serif" : "") + '">'
+    + tag
+    + "<h1>" + esc(l.title) + "</h1>"
+    + '<div class="rmeta"><span>' + esc(c.name) + "</span><span>" + esc(c.author) + "</span><span>"
+    + CN(l.chars) + " 字</span><span>第 " + (idxAll + 1) + " / " + LESSONS.length + " 节</span></div>"
+    + '<div class="txt">' + l.paras.map(p => "<p>" + esc(p) + "</p>").join("") + "</div>"
+    + '<div class="pager"><button id="pPrev"' + (pos <= 0 ? " disabled" : "") + ">"
+    + (pos > 0 ? "‹ " + esc(arr[pos - 1].title) : "已是第一节") + "</button>"
+    + '<button class="nx" id="pNext"' + (pos < 0 || pos >= arr.length - 1 ? " disabled" : "") + ">"
+    + (pos >= 0 && pos < arr.length - 1 ? esc(arr[pos + 1].title) + " ›" : "已是最后一节") + "</button></div>"
+    + '<div class="edgeEnd"></div></div>';
+  $("reader").classList.add("open");
+  document.body.classList.add("locked");
+  const rb = $("rBody");
+  rb.scrollTop = 0;
+  $("rPrev").disabled = !(pos > 0);
+  $("fPrev").disabled = $("rPrev").disabled;
+  $("rNext").disabled = !(pos >= 0 && pos < arr.length - 1);
+  $("fNext").disabled = $("rNext").disabled;
+  $("rPos").textContent = pos >= 0 ? ("筛选内 " + (pos + 1) + " / " + arr.length) : (idxAll + 1) + " / " + LESSONS.length;
+  updateBar();
+  renderToc();
+  if (push !== false && location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+  if (!state.prog[id]) { state.prog[id] = 0.001; saveProg(); }
+}
+function closeReader() {
+  $("reader").classList.remove("open");
+  document.body.classList.remove("locked");
+  state.cur = null;
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  renderList();
+}
+function updateBar() {
+  const rb = $("rBody");
+  const max = rb.scrollHeight - rb.clientHeight;
+  const r = max > 4 ? Math.min(1, rb.scrollTop / max) : 1;
+  $("rBar").style.width = (r * 100).toFixed(1) + "%";
+  if (state.cur) {
+    const old = state.prog[state.cur] || 0;
+    if (r > old || old < 0.02) {
+      state.prog[state.cur] = r;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveProg, 400);
+    }
+  }
+  return r;
+}
+function go(step) {
+  if (!state.cur) return;
+  const arr = filtered(true);
+  const p = arr.findIndex(x => x.id === state.cur);
+  if (p < 0) return;
+  const t = arr[p + step];
+  if (t) openLesson(t.id);
+}
+function renderToc() {
+  let html = "";
+  COURSES.forEach((c, ci) => {
+    html += '<div class="lvl1">' + esc(c.name) + "</div>";
+    c.lessons.forEach(l => {
+      html += '<button class="tocRow' + (l.id === state.cur ? " cur" : "") + '" data-id="' + l.id + '">'
+        + (l.chapter && l.chapter !== l.course ? esc(l.chapter) + " · " : "") + esc(l.title) + "</button>";
+    });
+  });
+  $("tocBody").innerHTML = html;
+}
+function syncChrome() {
+  document.body.classList.toggle("night", state.night);
+  $("nightBtn").textContent = state.night ? "☀" : "☾";
+  $("rNight").textContent = state.night ? "☀" : "☾";
+  $("rSerif").classList.toggle("on", state.serif);
+  document.documentElement.style.setProperty("--fs", state.fs + "px");
+  document.querySelectorAll(".art").forEach(a => a.classList.toggle("serif", state.serif));
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", state.night ? "#14171c" : "#ffffff");
+}
+
+/* ==================== 事件 ==================== */
+$("menuBtn").onclick = () => { document.body.classList.add("drawn"); document.body.classList.add("locked"); };
+$("closeSide").onclick = () => { document.body.classList.remove("drawn"); document.body.classList.remove("locked"); };
+$("scrim").onclick = $("closeSide").onclick;
+
+$("sBody").onclick = e => {
+  const cb = e.target.closest("[data-c]");
+  const lb = e.target.closest("[data-l]");
+  if (!state.pendC) { state.pendC = new Set(state.selC); state.pendL = new Set(state.selL); }
+  if (cb) {
+    const cid = cb.dataset.c;
+    const cl = COURSES.find(x => x.id === cid).lessons;
+    const on = cl.every(l => state.pendL.has(l.id));
+    cl.forEach(l => on ? state.pendL.delete(l.id) : state.pendL.add(l.id));
+    on ? state.pendC.delete(cid) : state.pendC.add(cid);
+  } else if (lb) {
+    const lid = lb.dataset.l;
+    state.pendL.has(lid) ? state.pendL.delete(lid) : state.pendL.add(lid);
+    const c = COURSES.find(x => x.lessons.some(l => l.id === lid));
+    c.lessons.every(l => state.pendL.has(l.id)) ? state.pendC.add(c.id) : state.pendC.delete(c.id);
+  } else return;
+  renderSide();
+};
+$("applyD").onclick = () => {
+  if (state.pendC) { state.selC = state.pendC; state.selL = state.pendL; state.pendC = state.pendL = null; }
+  saveSel(); renderSide(); renderList();
+  document.body.classList.remove("drawn"); document.body.classList.remove("locked");
+  window.scrollTo({ top: 0 });
+};
+$("resetAll").onclick = () => {
+  state.pendC = new Set(COURSES.map(c => c.id));
+  state.pendL = new Set(LESSONS.map(l => l.id));
+  state.kw = ""; $("kw").value = "";
+  renderSide();
+};
+let kwTimer = null;
+$("kw").oninput = e => {
+  state.kw = e.target.value;
+  if (state.pendC) { /* 保持待选状态 */ } else { state.pendC = new Set(state.selC); state.pendL = new Set(state.selL); }
+  clearTimeout(kwTimer);
+  kwTimer = setTimeout(() => { renderSide(); renderList(); }, 130);
+};
+
+$("list").onclick = e => {
+  const b = e.target.closest("[data-id]");
+  if (b) openLesson(b.dataset.id);
+};
+$("rClose").onclick = closeReader;
+$("rPrev").onclick = $("fPrev").onclick = () => go(-1);
+$("rNext").onclick = $("fNext").onclick = () => go(1);
+$("rBody").onscroll = updateBar;
+$("rFontUp").onclick = () => { state.fs = Math.min(26, state.fs + 1); LS.set("fs", state.fs); syncChrome(); updateBar(); };
+$("rFontDown").onclick = () => { state.fs = Math.max(14, state.fs - 1); LS.set("fs", state.fs); syncChrome(); updateBar(); };
+$("rSerif").onclick = () => { state.serif = !state.serif; LS.set("serif", state.serif); syncChrome(); };
+$("nightBtn").onclick = $("rNight").onclick = () => { state.night = !state.night; LS.set("night", state.night); syncChrome(); };
+$("rToc").onclick = () => { $("toc").classList.add("open"); renderToc(); };
+$("tocClose").onclick = () => $("toc").classList.remove("open");
+$("toc").onclick = e => { if (e.target === $("toc")) $("toc").classList.remove("open"); };
+$("tocBody").onclick = e => {
+  const b = e.target.closest("[data-id]");
+  if (!b) return;
+  $("toc").classList.remove("open");
+  openLesson(b.dataset.id);
+};
+$("rCopy").onclick = async () => {
+  const l = LESSONS[IDX.get(state.cur)]; if (!l) return;
+  const c = COURSES[l.ci];
+  const txt = "《" + c.name + "》\n" + (l.chapter && l.chapter !== l.course ? l.chapter + " · " : "") + l.title + "\n\n"
+    + l.paras.join("\n\n");
+  try {
+    await navigator.clipboard.writeText(txt);
+    toast("已复制本课逐字稿");
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); toast("已复制本课逐字稿"); } catch (x) { toast("复制失败，请长按选择"); }
+    ta.remove();
+  }
+};
+document.addEventListener("keydown", e => {
+  if ($("toc").classList.contains("open") && e.key === "Escape") { $("toc").classList.remove("open"); return; }
+  if (!$("reader").classList.contains("open")) return;
+  if (e.key === "Escape") closeReader();
+  else if (e.key === "ArrowLeft") go(-1);
+  else if (e.key === "ArrowRight") go(1);
+});
+window.addEventListener("hashchange", () => {
+  const id = location.hash.slice(1);
+  if (id && IDX.has(id)) openLesson(id, false);
+});
+
+/* 手势：左边缘右滑开抽屉 / 抽屉左滑关闭 / 阅读层左边缘右滑返回 */
+(function gestures() {
+  const EDGE = 26;
+  let sx = 0, sy = 0, mode = 0, tracking = false;
+  const drawerOpen = () => document.body.classList.contains("drawn");
+  const readerOpen = () => $("reader").classList.contains("open");
+  document.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    sx = t.clientX; sy = t.clientY; tracking = true;
+    if (drawerOpen()) mode = 2;
+    else if (!readerOpen() && sx <= EDGE) mode = 1;
+    else if (readerOpen() && sx <= EDGE) mode = 3;
+    else mode = 0;
+  }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dy) > Math.abs(dx) * 1.3 || Math.abs(dx) < 42) { mode = 0; return; }
+    if (mode === 1 && dx > 0) { document.body.classList.add("drawn", "locked"); }
+    else if (mode === 2 && dx < 0) { document.body.classList.remove("drawn", "locked"); }
+    else if (mode === 3 && dx > 0) { closeReader(); }
+    mode = 0;
+  }, { passive: true });
+})();
+
+/* ==================== 启动 ==================== */
+renderHero();
+renderSide();
+renderList();
+syncChrome();
+(function boot() {
+  const m = /mode=([a-z]+)/.exec(location.search);
+  if (m && m[1] === "desktop" && innerWidth < 900) toast("当前为桌面版视图");
+  const id = location.hash.slice(1);
+  if (id && IDX.has(id)) openLesson(id, false);
+})();
+</script>
+</body>
+</html>
