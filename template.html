@@ -58,6 +58,7 @@ a{color:inherit;text-decoration:none}
   transform:translateX(-101%);transition:transform .3s cubic-bezier(.32,.72,0,1);
   display:flex;flex-direction:column;border-right:1px solid var(--line);
   box-shadow:6px 0 34px rgba(16,24,40,.14)}
+.side.dragging{transition:none}
 body.drawn .side{transform:none}
 .sHead{display:flex;align-items:center;gap:8px;padding:15px 16px 12px;
   padding-top:calc(15px + env(safe-area-inset-top));border-bottom:1px solid var(--line2)}
@@ -138,7 +139,9 @@ body.drawn .edgeTips{visibility:hidden}
 .empty{padding:70px 12px;text-align:center;color:var(--tx3);font-size:14px;line-height:2.1}
 
 /* ================= 阅读层 ================= */
-.reader{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;flex-direction:column}
+.reader{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;flex-direction:column;
+  transition:transform .24s ease}
+.reader.drag{transition:none}
 .reader.open{display:flex}
 .rTop{flex:none;display:flex;align-items:center;gap:7px;padding:9px 11px;
   padding-top:calc(9px + env(safe-area-inset-top));border-bottom:1px solid var(--line2);
@@ -198,6 +201,20 @@ body.drawn .edgeTips{visibility:hidden}
   opacity:0;pointer-events:none;transition:.22s;z-index:130;white-space:nowrap}
 body.night .toast{background:#e6e9ee;color:#14171c}
 .toast.on{opacity:.95;transform:translateX(-50%)}
+
+/* ================= 未保存确认 ================= */
+.confirm{position:fixed;inset:0;z-index:140;display:none;align-items:center;justify-content:center;
+  background:rgba(18,22,29,.46);padding:24px}
+.confirm.open{display:flex}
+.confirm .box{width:min(100%,330px);background:var(--bg);border-radius:16px;padding:20px 18px 14px;
+  box-shadow:0 20px 60px rgba(16,24,40,.3);animation:pop .18s ease}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.confirm h4{margin:0 0 8px;font-size:16px}
+.confirm p{margin:0 0 16px;font-size:13.5px;color:var(--tx2);line-height:1.75}
+.confirm .btns{display:flex;gap:9px}
+.confirm .btns button{flex:1;padding:11px;border-radius:11px;font-size:14.5px}
+.confirm .no{background:var(--accent);color:#fff;font-weight:600}
+.confirm .yes{border:1px solid var(--line);color:var(--tx2);background:var(--bg)}
 
 /* ================= 桌面端 ================= */
 @media(min-width:900px){
@@ -295,6 +312,17 @@ body.night .toast{background:#e6e9ee;color:#14171c}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="confirm" id="confirm">
+  <div class="box">
+    <h4 id="cTitle">筛选改动还没应用</h4>
+    <p id="cDesc"></p>
+    <div class="btns">
+      <button class="no" id="cCancel">继续编辑</button>
+      <button class="yes" id="cOk">放弃并返回</button>
+    </div>
+  </div>
+</div>
 
 <script type="application/json" id="d">__DATA__</script>
 <script>
@@ -479,9 +507,21 @@ function openLesson(id, push) {
   if (push !== false && location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
   if (!state.prog[id]) { state.prog[id] = 0.001; saveProg(); }
 }
+/* 阅读层没有可编辑内容，钩子保留：将来加二创编辑时在这里返回 true 即可 */
+function hasUnsavedWork() { return false; }
 function closeReader() {
+  if (hasUnsavedWork()) {
+    askConfirm("有未保存的修改", "返回列表后，这次没保存的改动会丢失。确定返回吗？", "放弃修改")
+      .then(ok => { if (ok) doCloseReader(); });
+    return;
+  }
+  doCloseReader();
+}
+function doCloseReader() {
   $("reader").classList.remove("open");
-  document.body.classList.remove("locked");
+  $("reader").style.transform = "";
+  $("toc").classList.remove("open");
+  if (!document.body.classList.contains("drawn")) document.body.classList.remove("locked");
   state.cur = null;
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   renderList();
@@ -531,10 +571,73 @@ function syncChrome() {
   if (m) m.setAttribute("content", state.night ? "#14171c" : "#ffffff");
 }
 
+/* ==================== 未保存确认 ==================== */
+let confirmResolve = null;
+function askConfirm(title, desc, okText) {
+  return new Promise(res => {
+    confirmResolve = res;
+    $("cTitle").textContent = title;
+    $("cDesc").textContent = desc;
+    $("cOk").textContent = okText || "放弃并返回";
+    $("confirm").classList.add("open");
+  });
+}
+function settleConfirm(v) {
+  const r = confirmResolve;
+  confirmResolve = null;
+  $("confirm").classList.remove("open");
+  if (r) r(v);
+}
+$("cCancel").onclick = () => settleConfirm(false);
+$("cOk").onclick = () => settleConfirm(true);
+$("confirm").onclick = e => { if (e.target === $("confirm")) settleConfirm(false); };
+
+/* 待选筛选与已应用筛选是否不一致 */
+function hasPendingFilter() {
+  if (!state.pendC) return false;
+  if (state.pendC.size !== state.selC.size || state.pendL.size !== state.selL.size) return true;
+  for (const k of state.pendC) if (!state.selC.has(k)) return true;
+  for (const k of state.pendL) if (!state.selL.has(k)) return true;
+  return false;
+}
+
+/* ==================== 抽屉开关（含跟手动画） ==================== */
+function openDrawer() {
+  if ($("reader").classList.contains("open")) return;
+  $("side").style.transform = "";
+  $("scrim").style.opacity = "";
+  document.body.classList.add("drawn", "locked");
+}
+function settleSide(open) {
+  const side = $("side");
+  if (open) {
+    document.body.classList.add("drawn", "locked");
+    side.classList.remove("dragging");
+    side.style.transform = "";
+    $("scrim").style.opacity = "";
+  } else {
+    side.style.transform = "translateX(-101%)";
+    $("scrim").style.opacity = "";
+    document.body.classList.remove("drawn");
+    if (!$("reader").classList.contains("open")) document.body.classList.remove("locked");
+    setTimeout(() => { side.classList.remove("dragging"); side.style.transform = ""; }, 320);
+  }
+}
+/* force=true 时跳过「未保存确认」，用于「查看」按钮等已提交场景 */
+function closeDrawer(force) {
+  if (!document.body.classList.contains("drawn")) return;
+  if (!force && hasPendingFilter()) {
+    askConfirm("筛选改动还没应用", "你勾选的课时还没点「查看」，直接返回的话这次改动会丢掉。", "放弃并返回")
+      .then(ok => { if (ok) { state.pendC = state.pendL = null; closeDrawer(true); } });
+    return;
+  }
+  settleSide(false);
+}
+
 /* ==================== 事件 ==================== */
-$("menuBtn").onclick = () => { document.body.classList.add("drawn"); document.body.classList.add("locked"); };
-$("closeSide").onclick = () => { document.body.classList.remove("drawn"); document.body.classList.remove("locked"); };
-$("scrim").onclick = $("closeSide").onclick;
+$("menuBtn").onclick = openDrawer;
+$("closeSide").onclick = () => closeDrawer();
+$("scrim").onclick = () => closeDrawer();
 
 $("sBody").onclick = e => {
   const cb = e.target.closest("[data-c]");
@@ -557,7 +660,7 @@ $("sBody").onclick = e => {
 $("applyD").onclick = () => {
   if (state.pendC) { state.selC = state.pendC; state.selL = state.pendL; state.pendC = state.pendL = null; }
   saveSel(); renderSide(); renderList();
-  document.body.classList.remove("drawn"); document.body.classList.remove("locked");
+  settleSide(false);
   window.scrollTo({ top: 0 });
 };
 $("resetAll").onclick = () => {
@@ -569,7 +672,6 @@ $("resetAll").onclick = () => {
 let kwTimer = null;
 $("kw").oninput = e => {
   state.kw = e.target.value;
-  if (state.pendC) { /* 保持待选状态 */ } else { state.pendC = new Set(state.selC); state.pendL = new Set(state.selL); }
   clearTimeout(kwTimer);
   kwTimer = setTimeout(() => { renderSide(); renderList(); }, 130);
 };
@@ -611,43 +713,115 @@ $("rCopy").onclick = async () => {
   }
 };
 document.addEventListener("keydown", e => {
-  if ($("toc").classList.contains("open") && e.key === "Escape") { $("toc").classList.remove("open"); return; }
-  if (!$("reader").classList.contains("open")) return;
-  if (e.key === "Escape") closeReader();
-  else if (e.key === "ArrowLeft") go(-1);
-  else if (e.key === "ArrowRight") go(1);
+  if (e.key !== "Escape") {
+    if ($("reader").classList.contains("open")) {
+      if (e.key === "ArrowLeft") go(-1);
+      else if (e.key === "ArrowRight") go(1);
+    }
+    return;
+  }
+  if ($("confirm").classList.contains("open")) { settleConfirm(false); return; }
+  if ($("toc").classList.contains("open")) { $("toc").classList.remove("open"); return; }
+  if ($("reader").classList.contains("open")) { closeReader(); return; }
+  if (document.body.classList.contains("drawn")) closeDrawer();
 });
 window.addEventListener("hashchange", () => {
   const id = location.hash.slice(1);
   if (id && IDX.has(id)) openLesson(id, false);
 });
 
-/* 手势：左边缘右滑开抽屉 / 抽屉左滑关闭 / 阅读层左边缘右滑返回 */
+/* ==================== 滑动手势 ====================
+   1) 列表页：右滑打开目录（跟手位移）
+   2) 目录页：左滑返回列表（跟手位移；有未应用筛选时先确认）
+   3) 阅读页：从屏幕左边缘右滑返回列表（跟手位移 + 滑出动画）
+*/
 (function gestures() {
-  const EDGE = 26;
-  let sx = 0, sy = 0, mode = 0, tracking = false;
-  const drawerOpen = () => document.body.classList.contains("drawn");
-  const readerOpen = () => $("reader").classList.contains("open");
-  document.addEventListener("touchstart", e => {
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    sx = t.clientX; sy = t.clientY; tracking = true;
-    if (drawerOpen()) mode = 2;
-    else if (!readerOpen() && sx <= EDGE) mode = 1;
-    else if (readerOpen() && sx <= EDGE) mode = 3;
-    else mode = 0;
+  const side = $("side"), reader = $("reader"), scrim = $("scrim");
+  const SLOP = 7;              // 方向判定最小位移
+  const EDGE = 28;             // 阅读页可起滑的左边缘宽度
+  const TRIGGER = 58;          // 松手触发阈值
+  let desktop = innerWidth >= 900;
+  try {
+    const mq = window.matchMedia && window.matchMedia("(min-width:900px)");
+    if (mq) {
+      desktop = mq.matches;
+      const applyMQ = () => { desktop = mq.matches; };
+      if (mq.addEventListener) mq.addEventListener("change", applyMQ);
+      else if (mq.addListener) mq.addListener(applyMQ);
+    }
+  } catch (err) { /* 环境不支持 matchMedia 时用窗口宽度兜底 */ }
+
+  let g = null;
+  /*
+   * 不吞点击：滑动要越过 58px 触发阈值，早已超出浏览器 ~10px 的点击容差，
+   * 手指抬起时浏览器本就不会补发 click，额外抑制反而会吃掉紧随其后的正常点按。
+   */
+
+  const drawn = () => document.body.classList.contains("drawn");
+  const reading = () => reader.classList.contains("open");
+  function resetSide() { side.classList.remove("dragging"); side.style.transform = ""; scrim.style.opacity = ""; }
+  function resetReader() { reader.classList.remove("drag"); reader.style.transform = ""; reader.style.boxShadow = ""; }
+
+  document.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    if ($("confirm").classList.contains("open")) return;
+    if ($("toc").classList.contains("open")) return;
+    if (e.touches && e.touches.length > 1) return;
+    let mode = null;
+    if (reading()) { if (e.clientX <= EDGE) mode = "back"; }
+    else if (drawn()) { if (!desktop) mode = "close"; }
+    else if (!desktop) { mode = "open"; }
+    if (!mode) return;
+    g = { mode, id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, on: false };
   }, { passive: true });
-  document.addEventListener("touchend", e => {
-    if (!tracking) return;
-    tracking = false;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dy) > Math.abs(dx) * 1.3 || Math.abs(dx) < 42) { mode = 0; return; }
-    if (mode === 1 && dx > 0) { document.body.classList.add("drawn", "locked"); }
-    else if (mode === 2 && dx < 0) { document.body.classList.remove("drawn", "locked"); }
-    else if (mode === 3 && dx > 0) { closeReader(); }
-    mode = 0;
+
+  document.addEventListener("pointermove", e => {
+    if (!g || e.pointerId !== g.id) return;
+    const mx = e.clientX - g.x, my = e.clientY - g.y;
+    if (!g.on) {
+      if (Math.abs(mx) < SLOP && Math.abs(my) < SLOP) return;
+      if (Math.abs(my) > Math.abs(mx) * 1.15) { g = null; resetSide(); resetReader(); return; }
+      g.on = true;
+      if (g.mode === "open" || g.mode === "close") side.classList.add("dragging");
+      else reader.classList.add("drag");
+    }
+    g.dx = mx;
+    const w = side.offsetWidth || 320;
+    if (g.mode === "open") {
+      const p = Math.min(1, Math.max(0, mx / w));
+      side.style.transform = "translateX(" + ((p - 1) * 100).toFixed(2) + "%)";
+      scrim.style.opacity = (p * 0.42).toFixed(3);
+    } else if (g.mode === "close") {
+      const p = Math.min(1, Math.max(0, -mx / w));
+      side.style.transform = "translateX(" + (-p * 100).toFixed(2) + "%)";
+      scrim.style.opacity = ((1 - p) * 0.42).toFixed(3);
+    } else {
+      const d = Math.max(0, mx);
+      reader.style.transform = "translateX(" + d + "px)";
+      reader.style.boxShadow = "-8px 0 26px rgba(16,24,40," + Math.min(.22, d / 1400) + ")";
+    }
   }, { passive: true });
+
+  function end() {
+    if (!g) return;
+    const { mode, on, dx } = g;
+    g = null;
+    if (!on) { resetSide(); resetReader(); return; }
+    if (mode === "open") {
+      settleSide(dx > TRIGGER);
+    } else if (mode === "close") {
+      side.classList.remove("dragging");
+      side.style.transform = "";
+      scrim.style.opacity = "";
+      if (-dx > TRIGGER) closeDrawer();   // 有未应用的筛选改动时，closeDrawer 会先弹确认
+      else settleSide(true);              // 回弹
+    } else if (dx > 110) {
+      reader.style.transform = "translateX(100%)";
+      setTimeout(() => { resetReader(); closeReader(); }, 180);
+    } else resetReader();
+  }
+  document.addEventListener("pointerup", end, { passive: true });
+  document.addEventListener("pointercancel", () => { g = null; resetSide(); resetReader(); }, { passive: true });
 })();
 
 /* ==================== 启动 ==================== */
