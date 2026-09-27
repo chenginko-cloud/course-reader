@@ -1,5 +1,9 @@
 # 课程逐字稿库 course-reader
 
+🔗 **在线地址：https://chenginko-cloud.github.io/course-reader/**
+
+仓库：https://github.com/chenginko-cloud/course-reader （GitHub Pages，main / root）
+
 两门课的逐字稿浏览应用，左侧（手机端为顶部按钮）按 **课程 → 课时** 两级筛选，点任意一节进入阅读。
 单文件、零外部依赖，`index.html` 可直接双击离线打开，也可直接放 GitHub Pages。
 
